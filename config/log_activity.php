@@ -1,5 +1,5 @@
 <?php
-require 'database.php';
+require __DIR__ . '/../config/database.php';  // Fix path for Dockerh
 
 function logActivity($user_id, $action) {
     global $conn;
