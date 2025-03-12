@@ -1,6 +1,7 @@
 <?php
 session_start();
 require '../config/database.php';
+require '../log_activity.php';
 
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../login.php");
@@ -38,13 +39,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $stmt->bind_param("iids", $sender_id, $receiver_id, $amount, $comment);
         $stmt->execute();
 
+        logActivity($sender_id, "Transferred Rs. $amount to User ID $receiver_id");
         $conn->commit();
+
         header("Location: transactions.php?success=1");
     } else {
+        logActivity($sender_id, "Failed Transfer Attempt (Insufficient Funds)");
         echo "<script>alert('Insufficient balance!');</script>";
     }
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">

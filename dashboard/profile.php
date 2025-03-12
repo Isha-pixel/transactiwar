@@ -1,6 +1,7 @@
 <?php
 session_start();
 require '../config/database.php';
+require '../log_activity.php';
 
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../login.php");
@@ -11,8 +12,15 @@ $user_id = $_SESSION['user_id'];
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $bio = htmlspecialchars($_POST['bio']);
-    
+
     if (!empty($_FILES['profile_image']['name'])) {
+        $allowed_types = ['jpg', 'jpeg', 'png'];
+        $ext = strtolower(pathinfo($_FILES['profile_image']['name'], PATHINFO_EXTENSION));
+
+        if (!in_array($ext, $allowed_types)) {
+            die("Invalid file type!");
+        }
+
         $target_dir = "../uploads/";
         $target_file = $target_dir . basename($_FILES["profile_image"]["name"]);
         move_uploaded_file($_FILES["profile_image"]["tmp_name"], $target_file);
@@ -24,14 +32,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $stmt->bind_param("si", $bio, $user_id);
     }
     $stmt->execute();
+
+    logActivity($user_id, "Updated Profile");
     header("Location: profile.php?success=1");
 }
-
-$stmt = $conn->prepare("SELECT username, bio, profile_image FROM users WHERE id=?");
-$stmt->bind_param("i", $user_id);
-$stmt->execute();
-$user = $stmt->get_result()->fetch_assoc();
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">

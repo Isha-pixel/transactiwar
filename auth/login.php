@@ -1,10 +1,19 @@
 <?php
 session_start();
 require '../config/database.php';
+require '../log_activity.php';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $username = $_POST['username'];
     $password = $_POST['password'];
+
+    if (!isset($_SESSION['login_attempts'])) {
+        $_SESSION['login_attempts'] = 0;
+    }
+
+    if ($_SESSION['login_attempts'] > 5) {
+        die("Too many failed attempts. Try again later.");
+    }
 
     $stmt = $conn->prepare("SELECT id, password FROM users WHERE username=?");
     $stmt->bind_param("s", $username);
@@ -14,12 +23,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if ($user && password_verify($password, $user['password'])) {
         $_SESSION['user_id'] = $user['id'];
+        $_SESSION['login_attempts'] = 0;
+        logActivity($user['id'], "User Logged In");
         header("Location: ../dashboard/dashboard.php");
     } else {
-        echo "Invalid login!";
+        $_SESSION['login_attempts']++;
+        logActivity(0, "Failed Login Attempt for username: $username");
+        die("Invalid login!");
     }
 }
 ?>
+
 
 
 <!DOCTYPE html>
