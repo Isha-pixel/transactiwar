@@ -3,18 +3,16 @@ session_start();
 require '../config/database.php';
 require '../log_activity.php';
 
-if (!isset($_SESSION['user_id'])) {
-    header("Location: ../login.php");
-    exit();
-}
-
+// CSRF Protection
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+        die("CSRF validation failed!");
+    }
+
     $sender_id = $_SESSION['user_id'];
     $receiver_id = $_POST['receiver_id'];
     $amount = $_POST['amount'];
-    $comment = htmlspecialchars($_POST['comment']);
 
-    // Check sender balance
     $stmt = $conn->prepare("SELECT balance FROM users WHERE id=?");
     $stmt->bind_param("i", $sender_id);
     $stmt->execute();
@@ -23,32 +21,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if ($sender['balance'] >= $amount) {
         $conn->begin_transaction();
-
-        // Deduct from sender
         $stmt = $conn->prepare("UPDATE users SET balance = balance - ? WHERE id=?");
         $stmt->bind_param("di", $amount, $sender_id);
         $stmt->execute();
 
-        // Add to receiver
         $stmt = $conn->prepare("UPDATE users SET balance = balance + ? WHERE id=?");
         $stmt->bind_param("di", $amount, $receiver_id);
         $stmt->execute();
 
-        // Insert transaction record
-        $stmt = $conn->prepare("INSERT INTO transactions (sender_id, receiver_id, amount, comment) VALUES (?, ?, ?, ?)");
-        $stmt->bind_param("iids", $sender_id, $receiver_id, $amount, $comment);
+        $stmt = $conn->prepare("INSERT INTO transactions (sender_id, receiver_id, amount) VALUES (?, ?, ?)");
+        $stmt->bind_param("iid", $sender_id, $receiver_id, $amount);
         $stmt->execute();
 
         logActivity($sender_id, "Transferred Rs. $amount to User ID $receiver_id");
         $conn->commit();
-
-        header("Location: transactions.php?success=1");
     } else {
         logActivity($sender_id, "Failed Transfer Attempt (Insufficient Funds)");
-        echo "<script>alert('Insufficient balance!');</script>";
+        die("Insufficient funds.");
     }
 }
 ?>
+
 
 
 

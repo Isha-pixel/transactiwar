@@ -18,3 +18,5 @@ function logActivity($user_id, $action) {
     file_put_contents(__DIR__ . "/../logs/activity.log", $log_message, FILE_APPEND);
 }
 ?>
+
+
