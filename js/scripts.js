@@ -1,14 +1,14 @@
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", function () {
     const forms = document.querySelectorAll("form");
 
-    forms.forEach((form) => {
-        form.addEventListener("submit", (event) => {
+    forms.forEach(function (form) {
+        form.addEventListener("submit", function (event) {
             const inputs = form.querySelectorAll("input[required]");
             let valid = true;
 
-            inputs.forEach((input) => {
+            inputs.forEach(function (input) {
                 if (input.value.trim() === "") {
-                    alert(`${input.name} is required.`);
+                    alert(input.name + " is required.");
                     valid = false;
                 }
             });
